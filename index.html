@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VibeCheck — Client Profile Wizard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-deep: #07070e;
+  --bg-surface: #0e0e1a;
+  --bg-card: #151525;
+  --bg-card-hover: #1c1c32;
+  --bg-card-active: #1a1a35;
+  --bg-input: #111120;
+  --border-dim: rgba(255,255,255,0.06);
+  --border-med: rgba(255,255,255,0.10);
+  --border-bright: rgba(255,255,255,0.18);
+  --cyan: #00e5ff;
+  --cyan-dim: rgba(0,229,255,0.15);
+  --cyan-glow: rgba(0,229,255,0.35);
+  --violet: #b388ff;
+  --violet-dim: rgba(179,136,255,0.15);
+  --violet-glow: rgba(179,136,255,0.35);
+  --rose: #ff5f85;
+  --green: #69f0ae;
+  --amber: #ffd740;
+  --text-primary: #e8e8f0;
+  --text-secondary: rgba(232,232,240,0.55);
+  --text-muted: rgba(232,232,240,0.3);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --font-display: 'Outfit', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-display);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Background atmosphere ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(0,229,255,0.04), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(179,136,255,0.04), transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── Shell ── */
+.shell { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 0 20px 120px; }
+
+/* ── Top bar ── */
+.top-bar {
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  background: rgba(7,7,14,0.82);
+  border-bottom: 1px solid var(--border-dim);
+  margin: 0 -20px; padding: 16px 20px 14px;
+}
+.top-bar-inner { max-width: 720px; margin: 0 auto; }
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px;
+}
+.brand-logo {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  color: var(--bg-deep);
+}
+.brand-text { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary); }
+
+/* ── Progress ── */
+.progress-track { display: flex; gap: 4px; align-items: center; }
+.progress-step {
+  flex: 1; height: 4px;
+  background: var(--border-dim);
+  border-radius: 2px;
+  transition: background var(--transition);
+  position: relative;
+  cursor: pointer;
+}
+.progress-step.done { background: var(--cyan); }
+.progress-step.active { background: linear-gradient(90deg, var(--cyan), var(--violet)); }
+.progress-step .step-label {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-muted); white-space: nowrap;
+  transition: color var(--transition);
+}
+.progress-step.done .step-label,
+.progress-step.active .step-label { color: var(--text-secondary); }
+
+/* ── Section wrapper ── */
+.section {
+  display: none; opacity: 0;
+  animation: sectionIn 0.4s ease forwards;
+}
+.section.active { display: block; }
+@keyframes sectionIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-header {
+  margin: 56px 0 8px;
+}
+.section-tag {
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--cyan); margin-bottom: 8px;
+}
+.section-title {
+  font-size: 26px; font-weight: 700;
+  line-height: 1.2; letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.section-desc {
+  font-size: 14px; line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 540px;
+}
+
+/* ── Question block ── */
+.q-block { margin: 32px 0; }
+.q-label {
+  font-size: 15px; font-weight: 600;
+  margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+}
+.q-label .req { color: var(--rose); font-size: 12px; }
+.q-helper {
+  font-size: 13px; color: var(--text-secondary);
+  margin-bottom: 12px; line-height: 1.45;
+}
+
+/* ── Text input ── */
+.text-input, .email-input {
+  width: 100%; padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-med);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-display); font-size: 15px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+.text-input:focus, .email-input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px var(--cyan-dim);
+}
+.text-input::placeholder, .email-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Textarea ── */
+.textarea-wrap { position: relative; }
+.textarea-wrap textarea {
+  width: 100%; min-height: 100px; padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-med);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-display); font-size: 15px;
+  line-height: 1.5; resize: vertical;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+.textarea-wrap textarea:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px var(--cyan-dim);
+}
+.textarea-wrap textarea::placeholder { color: var(--text-muted); }
+.char-count {
+  position: absolute; bottom: 10px; right: 14px;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-muted);
+}
+.char-count.warn { color: var(--amber); }
+.char-count.over { color: var(--rose); }
+
+/* ── Radio / Checkbox cards ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.card-grid.wide { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.card-grid.narrow { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+
+.card {
+  position: relative;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+}
+.card:hover { background: var(--bg-card-hover); border-color: var(--border-bright); }
+.card.selected {
+  background: var(--bg-card-active);
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 1px var(--cyan), 0 0 20px -4px var(--cyan-dim);
+}
+.card .card-label {
+  font-size: 14px; font-weight: 500; line-height: 1.3;
+}
+.card .card-sub {
+  font-size: 11px; color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Checkbox indicator */
+.card.checkbox-card::before {
+  content: '';
+  position: absolute; top: 8px; right: 8px;
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--border-bright);
+  border-radius: 4px;
+  transition: all var(--transition);
+}
+.card.checkbox-card.selected::before {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan-dim);
+}
+.card.checkbox-card.selected::after {
+  content: '';
+  position: absolute; top: 10px; right: 12px;
+  width: 8px; height: 5px;
+  border-left: 2px solid var(--bg-deep);
+  border-bottom: 2px solid var(--bg-deep);
+  transform: rotate(-45deg);
+}
+
+/* Ranked cards (click-to-add) */
+.card.rank-card .rank-badge {
+  display: none;
+  position: absolute; top: -6px; right: -6px;
+  width: 22px; height: 22px;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  border-radius: 50%;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  color: var(--bg-deep);
+  align-items: center; justify-content: center;
+  z-index: 2;
+}
+.card.rank-card.selected .rank-badge { display: flex; }
+.card.rank-card.disabled-pick {
+  opacity: 0.3; pointer-events: none;
+}
+
+/* ── Daypart grid ── */
+.daypart-grid {
+  display: grid;
+  grid-template-columns: 120px repeat(4, 1fr);
+  gap: 6px;
+  overflow-x: auto;
+}
+.daypart-grid .dg-header {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 4px;
+}
+.daypart-grid .dg-row-label {
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center;
+  padding: 0 4px;
+  color: var(--text-primary);
+}
+.daypart-grid .dg-cell {
+  height: 44px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.daypart-grid .dg-cell:hover { background: var(--bg-card-hover); }
+.daypart-grid .dg-cell.selected {
+  background: var(--cyan-dim);
+  border-color: var(--cyan);
+  box-shadow: inset 0 0 12px var(--cyan-dim);
+}
+.daypart-grid .dg-cell.selected::after {
+  content: '';
+  width: 10px; height: 6px;
+  border-left: 2px solid var(--cyan);
+  border-bottom: 2px solid var(--cyan);
+  transform: rotate(-45deg);
+}
+
+/* ── Dynamic sub-fields ── */
+.dynamic-fields {
+  margin-top: 16px;
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.25s ease;
+}
+.dynamic-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+}
+.dynamic-row .dr-label {
+  font-size: 13px; font-weight: 500; min-width: 120px;
+  text-transform: capitalize;
+}
+.dynamic-row select {
+  flex: 1; padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-med);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-display); font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+.dynamic-row select:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px var(--cyan-dim);
+}
+
+/* ── Language sub-input ── */
+.lang-sub { margin-top: 10px; display: none; }
+.lang-sub.visible { display: block; }
+
+/* ── Bottom nav ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  background: rgba(7,7,14,0.88);
+  border-top: 1px solid var(--border-dim);
+  padding: 14px 20px;
+}
+.bottom-nav-inner {
+  max-width: 720px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.btn {
+  padding: 12px 28px;
+  border: none; border-radius: var(--radius-md);
+  font-family: var(--font-display); font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-back {
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text-secondary);
+}
+.btn-back:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+.btn-next {
+  background: linear-gradient(135deg, var(--cyan), #00b8d4);
+  color: var(--bg-deep); font-weight: 700;
+  box-shadow: 0 4px 20px -4px var(--cyan-dim);
+}
+.btn-next:hover { box-shadow: 0 4px 28px -2px var(--cyan-glow); transform: translateY(-1px); }
+.btn-next:active { transform: translateY(0); }
+.btn-next:disabled {
+  opacity: 0.4; cursor: not-allowed;
+  box-shadow: none; transform: none;
+}
+.btn-submit {
+  background: linear-gradient(135deg, var(--violet), #9c4dcc);
+  color: #fff; font-weight: 700;
+  box-shadow: 0 4px 20px -4px var(--violet-dim);
+  flex: 1;
+}
+.btn-submit:hover { box-shadow: 0 4px 28px -2px var(--violet-glow); transform: translateY(-1px); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+.btn-spacer { flex: 1; }
+.step-indicator {
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--text-muted); letter-spacing: 0.05em;
+}
+
+/* ── Review section ── */
+.review-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 20px; margin-bottom: 16px;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+.review-block:hover { border-color: var(--border-bright); }
+.review-block-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.review-block-title {
+  font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.review-block-title .tag {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--cyan); letter-spacing: 0.1em;
+}
+.review-block .edit-hint {
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.review-row {
+  display: flex; gap: 8px; padding: 4px 0;
+  font-size: 13px; line-height: 1.5;
+}
+.review-row .rr-label { color: var(--text-secondary); min-width: 140px; flex-shrink: 0; }
+.review-row .rr-value { color: var(--text-primary); word-break: break-word; }
+.review-row .rr-value.empty { color: var(--text-muted); font-style: italic; }
+
+/* ── Success page ── */
+.success-page { text-align: center; padding-top: 80px; }
+.success-icon {
+  width: 80px; height: 80px; margin: 0 auto 24px;
+  background: linear-gradient(135deg, var(--cyan-dim), var(--violet-dim));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  animation: successPulse 2s ease infinite;
+}
+@keyframes successPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--cyan-dim); }
+  50% { box-shadow: 0 0 0 16px transparent; }
+}
+.success-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.success-sub { font-size: 15px; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6; }
+.btn-new-profile {
+  margin-top: 32px;
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text-secondary);
+  padding: 12px 28px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+}
+.btn-new-profile:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* ── Access code modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-med);
+  border-radius: var(--radius-xl);
+  padding: 32px; max-width: 400px; width: 100%;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5; }
+.modal .text-input { margin-bottom: 16px; }
+.modal .btn-next { width: 100%; text-align: center; }
+.modal .error-text { color: var(--rose); font-size: 13px; margin-bottom: 12px; display: none; }
+
+/* ── Loading ── */
+.loading-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(7,7,14,0.9);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 20px;
+}
+.loading-overlay.hidden { display: none; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border-dim);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: var(--text-secondary); }
+
+/* ── Error toast ── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  z-index: 1001;
+  background: var(--bg-surface);
+  border: 1px solid var(--rose);
+  border-radius: var(--radius-md);
+  padding: 12px 20px;
+  font-size: 13px; color: var(--rose);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease;
+  max-width: 90vw; text-align: center;
+}
+.toast.visible { opacity: 1; pointer-events: auto; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .card-grid.wide { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .section-title { font-size: 22px; }
+  .daypart-grid { grid-template-columns: 90px repeat(4, 1fr); font-size: 12px; }
+  .dynamic-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .dynamic-row .dr-label { min-width: auto; }
+  .dynamic-row select { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- Access Code Modal -->
+<div class="modal-overlay" id="accessCodeModal">
+  <div class="modal">
+    <h2>VibeCheck Onboarding</h2>
+    <p>Enter the access code provided by your VibeCheck representative to begin your venue music profile.</p>
+    <div class="error-text" id="codeError">Invalid access code. Please try again.</div>
+    <input type="text" class="text-input" id="accessCodeInput" placeholder="Enter access code..." autocomplete="off">
+    <button class="btn btn-next" onclick="validateAccessCode()">Continue</button>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Submitting profile...</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Top bar -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <div class="brand">
+      <div class="brand-logo">V</div>
+      <div class="brand-text">VibeCheck Client Profile</div>
+    </div>
+    <div class="progress-track" id="progressTrack"></div>
+  </div>
+</div>
+
+<div class="shell" id="shell">
+
+  <!-- Section A -->
+  <div class="section" data-section="0">
+    <div class="section-header">
+      <div class="section-tag">Section A</div>
+      <div class="section-title">Client & Venue Info</div>
+      <div class="section-desc">Let's start with the basics about the venue and your main contact.</div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Venue / Brand Name <span class="req">*</span></div>
+      <input type="text" class="text-input" data-field="venue_name" placeholder="e.g. The Blue Rooster">
+    </div>
+    <div class="q-block">
+      <div class="q-label">Venue Type</div>
+      <div class="card-grid wide" data-radio="venue_type">
+        <div class="card" data-value="fine_dining"><div class="card-label">Fine Dining</div></div>
+        <div class="card" data-value="casual_dining"><div class="card-label">Casual Dining</div></div>
+        <div class="card" data-value="bar_lounge"><div class="card-label">Bar & Lounge</div></div>
+        <div class="card" data-value="nightclub"><div class="card-label">Nightclub</div></div>
+        <div class="card" data-value="cafe"><div class="card-label">Cafe</div></div>
+        <div class="card" data-value="hotel_lobby"><div class="card-label">Hotel Lobby</div></div>
+        <div class="card" data-value="rooftop"><div class="card-label">Rooftop</div></div>
+        <div class="card" data-value="brewery_taproom"><div class="card-label">Brewery / Taproom</div></div>
+        <div class="card" data-value="fast_casual"><div class="card-label">Fast Casual</div></div>
+        <div class="card" data-value="event_space"><div class="card-label">Event Space</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Venue Address</div>
+      <input type="text" class="text-input" data-field="venue_address" placeholder="Optional">
+    </div>
+    <div class="q-block">
+      <div class="q-label">Main Contact Name & Role</div>
+      <input type="text" class="text-input" data-field="contact_name" placeholder="e.g. Jane Smith, GM">
+    </div>
+    <div class="q-block">
+      <div class="q-label">Contact Email <span class="req">*</span></div>
+      <input type="email" class="email-input" data-field="contact_email" placeholder="email@venue.com">
+    </div>
+  </div>
+
+  <!-- Section B -->
+  <div class="section" data-section="1">
+    <div class="section-header">
+      <div class="section-tag">Section B</div>
+      <div class="section-title">Brand & Atmosphere</div>
+      <div class="section-desc">Help us understand the mood and energy you want for the space.</div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Brand Atmosphere / Overall Theme</div>
+      <div class="q-helper">Describe the overall mood and vibe of the brand — how you want the space to feel.</div>
+      <div class="textarea-wrap">
+        <textarea data-field="brand_description" maxlength="500" placeholder="e.g. Upscale casual neighborhood bistro with exposed brick and candlelight"></textarea>
+        <div class="char-count"><span class="cc-count">0</span>/500</div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Target Audience</div>
+      <div class="q-helper">Who are your typical guests?</div>
+      <div class="textarea-wrap">
+        <textarea data-field="target_audience" maxlength="300" placeholder="e.g. Young professionals 25-40, date night crowd, weekend brunch families"></textarea>
+        <div class="char-count"><span class="cc-count">0</span>/300</div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Primary Energy Vibe</div>
+      <div class="card-grid wide" data-radio="primary_vibe">
+        <div class="card" data-value="intimate_quiet"><div class="card-label">Intimate & Quiet</div></div>
+        <div class="card" data-value="relaxed_ambient"><div class="card-label">Relaxed Ambient</div></div>
+        <div class="card" data-value="casual_upbeat"><div class="card-label">Casual Upbeat</div></div>
+        <div class="card" data-value="energetic_social"><div class="card-label">Energetic Social</div></div>
+        <div class="card" data-value="high_energy_party"><div class="card-label">High Energy Party</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Music's Role in the Space</div>
+      <div class="card-grid wide" data-radio="music_role">
+        <div class="card" data-value="background"><div class="card-label">Background</div><div class="card-sub">Barely noticed</div></div>
+        <div class="card" data-value="ambiance"><div class="card-label">Ambiance</div><div class="card-sub">Sets the tone</div></div>
+        <div class="card" data-value="atmosphere_driver"><div class="card-label">Atmosphere Driver</div><div class="card-sub">Shapes the experience</div></div>
+        <div class="card" data-value="foreground_feature"><div class="card-label">Foreground Feature</div><div class="card-sub">Central to the vibe</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section C -->
+  <div class="section" data-section="2">
+    <div class="section-header">
+      <div class="section-tag">Section C</div>
+      <div class="section-title">Genre Preferences</div>
+      <div class="section-desc">Which genres define this venue's sound? Pick your top choices and anything to avoid.</div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Core Genres <span style="color:var(--text-secondary);font-weight:400;font-size:13px">(pick 3-5, tap to rank)</span></div>
+      <div class="q-helper">Tap genres in order of importance. First pick = highest priority.</div>
+      <div class="card-grid" data-rank="core_genres" data-max="5" id="coreGenreGrid">
+        <div class="card rank-card" data-value="pop"><div class="rank-badge"></div><div class="card-label">Pop</div></div>
+        <div class="card rank-card" data-value="rock"><div class="rank-badge"></div><div class="card-label">Rock</div></div>
+        <div class="card rank-card" data-value="hip_hop"><div class="rank-badge"></div><div class="card-label">Hip Hop</div></div>
+        <div class="card rank-card" data-value="r_and_b"><div class="rank-badge"></div><div class="card-label">R&B</div></div>
+        <div class="card rank-card" data-value="electronic"><div class="rank-badge"></div><div class="card-label">Electronic</div></div>
+        <div class="card rank-card" data-value="jazz"><div class="rank-badge"></div><div class="card-label">Jazz</div></div>
+        <div class="card rank-card" data-value="latin"><div class="rank-badge"></div><div class="card-label">Latin</div></div>
+        <div class="card rank-card" data-value="indie"><div class="rank-badge"></div><div class="card-label">Indie</div></div>
+        <div class="card rank-card" data-value="soul"><div class="rank-badge"></div><div class="card-label">Soul</div></div>
+        <div class="card rank-card" data-value="funk"><div class="rank-badge"></div><div class="card-label">Funk</div></div>
+        <div class="card rank-card" data-value="disco"><div class="rank-badge"></div><div class="card-label">Disco</div></div>
+        <div class="card rank-card" data-value="folk"><div class="rank-badge"></div><div class="card-label">Folk</div></div>
+        <div class="card rank-card" data-value="blues"><div class="rank-badge"></div><div class="card-label">Blues</div></div>
+        <div class="card rank-card" data-value="country"><div class="rank-badge"></div><div class="card-label">Country</div></div>
+        <div class="card rank-card" data-value="classical"><div class="rank-badge"></div><div class="card-label">Classical</div></div>
+        <div class="card rank-card" data-value="reggae"><div class="rank-badge"></div><div class="card-label">Reggae</div></div>
+        <div class="card rank-card" data-value="world"><div class="rank-badge"></div><div class="card-label">World</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Genres to Exclude</div>
+      <div class="q-helper">Select any genres that should be avoided. Genres already picked as core are grayed out.</div>
+      <div class="card-grid" id="excludeGenreGrid">
+        <!-- Populated by JS -->
+      </div>
+      <div class="dynamic-fields" id="exclusionStrictnessFields"></div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Sub-genre Notes</div>
+      <div class="textarea-wrap">
+        <textarea data-field="subgenre_notes" placeholder="e.g. bossa nova, yacht rock, lo-fi hip hop, deep house"></textarea>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Artist & Song References</div>
+      <div class="q-helper">List specific artists or songs that capture the vibe you're going for.</div>
+      <div class="textarea-wrap">
+        <textarea data-field="artist_song_references" placeholder="e.g. Khruangbin, Tom Misch, Sade — 'Smooth Operator', Fleetwood Mac — 'Dreams'"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section D -->
+  <div class="section" data-section="3">
+    <div class="section-header">
+      <div class="section-tag">Section D</div>
+      <div class="section-title">Era & Popularity</div>
+      <div class="section-desc">What decades should dominate, and how well-known should the songs be?</div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Preferred Decades <span style="color:var(--text-secondary);font-weight:400;font-size:13px">(tap to rank)</span></div>
+      <div class="card-grid narrow" data-rank="era_preferences" data-max="7">
+        <div class="card rank-card" data-value="1960s"><div class="rank-badge"></div><div class="card-label">1960s</div></div>
+        <div class="card rank-card" data-value="1970s"><div class="rank-badge"></div><div class="card-label">1970s</div></div>
+        <div class="card rank-card" data-value="1980s"><div class="rank-badge"></div><div class="card-label">1980s</div></div>
+        <div class="card rank-card" data-value="1990s"><div class="rank-badge"></div><div class="card-label">1990s</div></div>
+        <div class="card rank-card" data-value="2000s"><div class="rank-badge"></div><div class="card-label">2000s</div></div>
+        <div class="card rank-card" data-value="2010s"><div class="rank-badge"></div><div class="card-label">2010s</div></div>
+        <div class="card rank-card" data-value="2020s"><div class="rank-badge"></div><div class="card-label">2020s</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Era Diversity</div>
+      <div class="card-grid wide" data-radio="era_diversity">
+        <div class="card" data-value="single_era_focus"><div class="card-label">Single Era Focus</div></div>
+        <div class="card" data-value="couple_decades"><div class="card-label">Couple Decades</div></div>
+        <div class="card" data-value="balanced_mix"><div class="card-label">Balanced Mix</div></div>
+        <div class="card" data-value="wide_variety"><div class="card-label">Wide Variety</div></div>
+        <div class="card" data-value="all_eras_welcome"><div class="card-label">All Eras Welcome</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Popularity Level</div>
+      <div class="card-grid wide" data-radio="popularity_preference">
+        <div class="card" data-value="deep_cuts_only"><div class="card-label">Deep Cuts Only</div></div>
+        <div class="card" data-value="mostly_deep_cuts"><div class="card-label">Mostly Deep Cuts</div></div>
+        <div class="card" data-value="balanced_mix"><div class="card-label">Balanced Mix</div></div>
+        <div class="card" data-value="lean_mainstream"><div class="card-label">Lean Mainstream</div></div>
+        <div class="card" data-value="hits_only"><div class="card-label">Hits Only</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section E -->
+  <div class="section" data-section="4">
+    <div class="section-header">
+      <div class="section-tag">Section E</div>
+      <div class="section-title">Energy & Mood</div>
+      <div class="section-desc">Define when the venue operates and how the energy should flow throughout the day.</div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Operating Dayparts</div>
+      <div class="q-helper">Select which dayparts and days the venue operates with music.</div>
+      <div class="daypart-grid" id="daypartGrid">
+        <div class="dg-header"></div>
+        <div class="dg-header">Weekday</div>
+        <div class="dg-header">Friday</div>
+        <div class="dg-header">Saturday</div>
+        <div class="dg-header">Sunday</div>
+        <!-- Rows generated by JS -->
+      </div>
+    </div>
+    <div class="q-block" id="daypartEnergyBlock" style="display:none">
+      <div class="q-label">Daypart Energy Overrides</div>
+      <div class="q-helper">Set energy level for each operating daypart (leave as default to use the primary vibe energy).</div>
+      <div class="dynamic-fields" id="daypartEnergyFields"></div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Overall Mood</div>
+      <div class="card-grid wide" data-radio="mood_preference">
+        <div class="card" data-value="melancholic_moody"><div class="card-label">Melancholic & Moody</div></div>
+        <div class="card" data-value="cool_sophisticated"><div class="card-label">Cool & Sophisticated</div></div>
+        <div class="card" data-value="warm_neutral"><div class="card-label">Warm & Neutral</div></div>
+        <div class="card" data-value="upbeat_positive"><div class="card-label">Upbeat & Positive</div></div>
+        <div class="card" data-value="euphoric_joyful"><div class="card-label">Euphoric & Joyful</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Energy Flow Style</div>
+      <div class="card-grid wide" data-radio="energy_flow_style">
+        <div class="card" data-value="flat_consistent"><div class="card-label">Flat & Consistent</div><div class="card-sub">Steady all night</div></div>
+        <div class="card" data-value="gentle_waves"><div class="card-label">Gentle Waves</div><div class="card-sub">Subtle rises & falls</div></div>
+        <div class="card" data-value="standard_flow"><div class="card-label">Standard Flow</div><div class="card-sub">Natural peaks</div></div>
+        <div class="card" data-value="dynamic_peaks"><div class="card-label">Dynamic Peaks</div><div class="card-sub">Strong energy waves</div></div>
+        <div class="card" data-value="dj_style_builds"><div class="card-label">DJ-Style Builds</div><div class="card-sub">Dramatic arcs</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section F -->
+  <div class="section" data-section="5">
+    <div class="section-header">
+      <div class="section-tag">Section F</div>
+      <div class="section-title">Tempo & Sound</div>
+      <div class="section-desc">Fine-tune the tempo, acoustic character, and vocal balance of the music.</div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Tempo Preference</div>
+      <div class="card-grid wide" data-radio="tempo_preference">
+        <div class="card" data-value="very_slow"><div class="card-label">Very Slow</div><div class="card-sub">~78 BPM</div></div>
+        <div class="card" data-value="slow"><div class="card-label">Slow</div><div class="card-sub">~90 BPM</div></div>
+        <div class="card" data-value="moderate"><div class="card-label">Moderate</div><div class="card-sub">~102 BPM</div></div>
+        <div class="card" data-value="upbeat"><div class="card-label">Upbeat</div><div class="card-sub">~115 BPM</div></div>
+        <div class="card" data-value="fast"><div class="card-label">Fast</div><div class="card-sub">~127 BPM</div></div>
+        <div class="card" data-value="high_energy"><div class="card-label">High Energy</div><div class="card-sub">~140 BPM</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Acoustic vs Electronic</div>
+      <div class="card-grid" data-radio="acoustic_electronic_balance">
+        <div class="card" data-value="fully_acoustic"><div class="card-label">Fully Acoustic</div></div>
+        <div class="card" data-value="mostly_acoustic"><div class="card-label">Mostly Acoustic</div></div>
+        <div class="card" data-value="acoustic_leaning"><div class="card-label">Acoustic Leaning</div></div>
+        <div class="card" data-value="balanced"><div class="card-label">Balanced</div></div>
+        <div class="card" data-value="electronic_leaning"><div class="card-label">Electronic Leaning</div></div>
+        <div class="card" data-value="mostly_electronic"><div class="card-label">Mostly Electronic</div></div>
+        <div class="card" data-value="fully_electronic"><div class="card-label">Fully Electronic</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Vocal Preference</div>
+      <div class="card-grid wide" data-radio="vocal_preference">
+        <div class="card" data-value="instrumental_only"><div class="card-label">Instrumental Only</div></div>
+        <div class="card" data-value="mostly_instrumental"><div class="card-label">Mostly Instrumental</div></div>
+        <div class="card" data-value="no_preference"><div class="card-label">No Preference</div></div>
+        <div class="card" data-value="mostly_vocal"><div class="card-label">Mostly Vocal</div></div>
+        <div class="card" data-value="vocals_required"><div class="card-label">Vocals Required</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section G -->
+  <div class="section" data-section="6">
+    <div class="section-header">
+      <div class="section-tag">Section G</div>
+      <div class="section-title">Content Restrictions</div>
+      <div class="section-desc">Set content policies, language preferences, and any specific things to avoid.</div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Explicit Content Policy</div>
+      <div class="card-grid wide" data-radio="explicit_content_policy">
+        <div class="card" data-value="no_restrictions"><div class="card-label">No Restrictions</div></div>
+        <div class="card" data-value="minimize_explicit"><div class="card-label">Minimize Explicit</div></div>
+        <div class="card" data-value="no_explicit"><div class="card-label">No Explicit Content</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Language Preference</div>
+      <div class="card-grid wide" data-radio="language_preference_choice">
+        <div class="card" data-value="english_only"><div class="card-label">English Only</div></div>
+        <div class="card" data-value="primarily_english"><div class="card-label">Primarily English</div></div>
+        <div class="card" data-value="english_with_some_foreign"><div class="card-label">English + Some Foreign</div></div>
+        <div class="card" data-value="multilingual"><div class="card-label">Multilingual</div></div>
+        <div class="card" data-value="specific_languages"><div class="card-label">Specific Languages</div></div>
+      </div>
+      <div class="lang-sub" id="langSubInput">
+        <input type="text" class="text-input" data-field="specific_languages_text" placeholder="e.g. Spanish, Portuguese, French">
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Content Themes to Avoid</div>
+      <div class="card-grid wide" data-multi="content_restrictions">
+        <div class="card checkbox-card" data-value="overtly_political"><div class="card-label">Overtly Political</div></div>
+        <div class="card checkbox-card" data-value="religious"><div class="card-label">Religious</div></div>
+        <div class="card checkbox-card" data-value="drug_references"><div class="card-label">Drug References</div></div>
+        <div class="card checkbox-card" data-value="sexual_content"><div class="card-label">Sexual Content</div></div>
+        <div class="card checkbox-card" data-value="violence"><div class="card-label">Violence</div></div>
+        <div class="card checkbox-card" data-value="profanity"><div class="card-label">Profanity</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Artist / Song Blocklist</div>
+      <div class="textarea-wrap">
+        <textarea data-field="blocklist_notes" placeholder="e.g. Nickelback, Baby Shark, Christmas music outside Dec 15-Jan 1"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section H -->
+  <div class="section" data-section="7">
+    <div class="section-header">
+      <div class="section-tag">Section H</div>
+      <div class="section-title">Advanced Programming</div>
+      <div class="section-desc">Fine-tune repetition tolerance, discovery levels, and any special programming needs.</div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Artist Repetition Tolerance</div>
+      <div class="q-helper">How long before the same artist can play again?</div>
+      <div class="card-grid wide" data-radio="artist_repetition_tolerance">
+        <div class="card" data-value="very_strict"><div class="card-label">Very Strict</div><div class="card-sub">90 min gap</div></div>
+        <div class="card" data-value="strict"><div class="card-label">Strict</div><div class="card-sub">60 min gap</div></div>
+        <div class="card" data-value="standard"><div class="card-label">Standard</div><div class="card-sub">45 min gap</div></div>
+        <div class="card" data-value="relaxed"><div class="card-label">Relaxed</div><div class="card-sub">30 min gap</div></div>
+        <div class="card" data-value="minimal"><div class="card-label">Minimal</div><div class="card-sub">15 min gap</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Discovery vs Familiarity</div>
+      <div class="q-helper">How much should the system explore lesser-known tracks?</div>
+      <div class="card-grid wide" data-radio="discovery_level">
+        <div class="card" data-value="all_familiar"><div class="card-label">All Familiar</div></div>
+        <div class="card" data-value="mostly_familiar"><div class="card-label">Mostly Familiar</div></div>
+        <div class="card" data-value="balanced"><div class="card-label">Balanced</div></div>
+        <div class="card" data-value="some_discovery"><div class="card-label">Some Discovery</div></div>
+        <div class="card" data-value="lots_of_discovery"><div class="card-label">Lots of Discovery</div></div>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Special Programming Notes</div>
+      <div class="textarea-wrap">
+        <textarea data-field="special_programming_notes" placeholder="e.g. Live jazz Thursdays, 80s brunch monthly, quiet piano for private events"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section I: Review -->
+  <div class="section" data-section="8">
+    <div class="section-header">
+      <div class="section-tag">Review</div>
+      <div class="section-title">Review & Submit</div>
+      <div class="section-desc">Review the profile below. Tap any section to go back and edit.</div>
+    </div>
+    <div id="reviewContent"></div>
+  </div>
+
+  <!-- Success page -->
+  <div class="section" data-section="9">
+    <div class="success-page">
+      <div class="success-icon">&#10003;</div>
+      <div class="success-title" id="successTitle">Profile Submitted!</div>
+      <div class="success-sub" id="successSub">Our team will configure your music system based on your preferences.</div>
+      <button class="btn-new-profile" onclick="resetWizard()">Create Another Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<div class="bottom-nav" id="bottomNav">
+  <div class="bottom-nav-inner">
+    <button class="btn btn-back" id="btnBack" onclick="prevSection()">Back</button>
+    <span class="step-indicator" id="stepIndicator"></span>
+    <button class="btn btn-next" id="btnNext" onclick="nextSection()">Next</button>
+  </div>
+</div>
+
+<!-- Supabase JS Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+// ═════════════════════════════════════════════════════════════════════════════
+// Supabase Configuration
+// ═════════════════════════════════════════════════════════════════════════════
+
+// IMPORTANT: Replace with your Supabase project anon key.
+// The anon key is safe to embed — RLS restricts it to INSERT only.
+const SUPABASE_URL = 'https://vtzrdssvimmpcvsorgie.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0enJkc3N2aW1tcGN2c29yZ2llIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNzQ4OTYsImV4cCI6MjA4ODc1MDg5Nn0.QJZ1hVGI4rUDYv-1zwXsuYxrFfa4k2vsw9PnEWl4zbU';
+
+const ACCESS_CODE = 'vibecheck';
+
+let supabase = null;
+
+function initSupabase() {
+  if (SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+    console.error('Supabase anon key not configured. Update SUPABASE_ANON_KEY in index.html.');
+    return false;
+  }
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return true;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// State
+// ═════════════════════════════════════════════════════════════════════════════
+
+const TOTAL_SECTIONS = 9; // 0-7 = A-H, 8 = Review
+let currentSection = 0;
+const formData = {};
+const radioState = {};
+const multiState = {};
+const rankState = {};
+
+const GENRES = ['pop','rock','hip_hop','r_and_b','electronic','jazz','latin','indie','soul','funk','disco','folk','blues','country','classical','reggae','world'];
+const GENRE_LABELS = {pop:'Pop',rock:'Rock',hip_hop:'Hip Hop',r_and_b:'R&B',electronic:'Electronic',jazz:'Jazz',latin:'Latin',indie:'Indie',soul:'Soul',funk:'Funk',disco:'Disco',folk:'Folk',blues:'Blues',country:'Country',classical:'Classical',reggae:'Reggae',world:'World'};
+const DAYPARTS = ['brunch','lunch','afternoon','happy_hour','dinner','late_night'];
+const DAYPART_LABELS = {brunch:'Brunch',lunch:'Lunch',afternoon:'Afternoon',happy_hour:'Happy Hour',dinner:'Dinner',late_night:'Late Night'};
+const DAYS = ['weekday','friday','saturday','sunday'];
+const DAY_LABELS = {weekday:'Weekday',friday:'Friday',saturday:'Saturday',sunday:'Sunday'};
+const SECTION_NAMES = ['Venue Info','Brand & Atmosphere','Genre Preferences','Era & Popularity','Energy & Mood','Tempo & Sound','Content Restrictions','Advanced','Review'];
+
+let selectedDayparts = new Set();
+let daypartEnergy = {};
+let excludedGenres = new Set();
+let exclusionStrictness = {};
+let langChoice = 'english_only';
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Access Code Gate
+// ═════════════════════════════════════════════════════════════════════════════
+
+function validateAccessCode() {
+  const input = document.getElementById('accessCodeInput').value.trim().toLowerCase();
+  const errorEl = document.getElementById('codeError');
+
+  if (input === ACCESS_CODE) {
+    sessionStorage.setItem('vibecheck_access', 'granted');
+    document.getElementById('accessCodeModal').classList.add('hidden');
+    errorEl.style.display = 'none';
+  } else {
+    errorEl.style.display = 'block';
+    document.getElementById('accessCodeInput').value = '';
+    document.getElementById('accessCodeInput').focus();
+  }
+}
+
+// Allow Enter key to submit access code
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !document.getElementById('accessCodeModal').classList.contains('hidden')) {
+    validateAccessCode();
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Toast
+// ═════════════════════════════════════════════════════════════════════════════
+
+function showToast(msg, duration = 4000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), duration);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Init
+// ═════════════════════════════════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Check access code
+  if (sessionStorage.getItem('vibecheck_access') === 'granted') {
+    document.getElementById('accessCodeModal').classList.add('hidden');
+  }
+  // else: modal is visible by default
+
+  initSupabase();
+  buildProgressTrack();
+  buildExcludeGenreGrid();
+  buildDaypartGrid();
+  initRadioCards();
+  initMultiCards();
+  initRankCards();
+  initTextareas();
+  goToSection(0);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Progress
+// ═════════════════════════════════════════════════════════════════════════════
+
+function buildProgressTrack() {
+  const track = document.getElementById('progressTrack');
+  track.innerHTML = '';
+  for (let i = 0; i <= TOTAL_SECTIONS; i++) {
+    const step = document.createElement('div');
+    step.className = 'progress-step';
+    step.dataset.step = i;
+    const label = document.createElement('span');
+    label.className = 'step-label';
+    label.textContent = i < SECTION_NAMES.length ? SECTION_NAMES[i] : '';
+    step.appendChild(label);
+    step.addEventListener('click', () => {
+      if (i <= currentSection) goToSection(i);
+    });
+    track.appendChild(step);
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  document.querySelectorAll('.progress-step').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.toggle('done', s < currentSection);
+    el.classList.toggle('active', s === currentSection);
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Navigation
+// ═════════════════════════════════════════════════════════════════════════════
+
+function goToSection(idx) {
+  if (idx === 8) buildReview();
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  const target = document.querySelector(`.section[data-section="${idx}"]`);
+  if (target) {
+    target.classList.add('active');
+    // Re-trigger animation
+    target.style.animation = 'none';
+    target.offsetHeight;
+    target.style.animation = '';
+  }
+  currentSection = idx;
+  updateProgress();
+  updateNav();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextSection() {
+  if (currentSection === 8) {
+    submitProfile();
+    return;
+  }
+  if (!validateSection(currentSection)) return;
+  goToSection(currentSection + 1);
+}
+
+function prevSection() {
+  if (currentSection > 0) goToSection(currentSection - 1);
+}
+
+function updateNav() {
+  const back = document.getElementById('btnBack');
+  const next = document.getElementById('btnNext');
+  const indicator = document.getElementById('stepIndicator');
+  const nav = document.getElementById('bottomNav');
+
+  if (currentSection === 9) {
+    nav.style.display = 'none';
+    return;
+  }
+  nav.style.display = '';
+
+  back.style.visibility = currentSection === 0 ? 'hidden' : 'visible';
+
+  if (currentSection === 8) {
+    next.textContent = 'Submit Profile';
+    next.className = 'btn btn-submit';
+  } else {
+    next.textContent = 'Next';
+    next.className = 'btn btn-next';
+  }
+
+  indicator.textContent = `${currentSection + 1} / ${TOTAL_SECTIONS + 1}`;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Validation
+// ═════════════════════════════════════════════════════════════════════════════
+
+function validateSection(idx) {
+  if (idx === 0) {
+    const name = getField('venue_name');
+    const email = getField('contact_email');
+    if (!name) { showToast('Venue name is required'); return false; }
+    if (!email || !email.includes('@')) { showToast('Valid contact email is required'); return false; }
+  }
+  return true;
+}
+
+function getField(name) {
+  const el = document.querySelector(`[data-field="${name}"]`);
+  return el ? el.value.trim() : '';
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Radio cards
+// ═════════════════════════════════════════════════════════════════════════════
+
+function initRadioCards() {
+  document.querySelectorAll('[data-radio]').forEach(grid => {
+    const field = grid.dataset.radio;
+    grid.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => {
+        grid.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        radioState[field] = card.dataset.value;
+        // Language sub-input
+        if (field === 'language_preference_choice') {
+          langChoice = card.dataset.value;
+          const sub = document.getElementById('langSubInput');
+          sub.classList.toggle('visible', card.dataset.value === 'specific_languages');
+        }
+      });
+    });
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Multi-select cards
+// ═════════════════════════════════════════════════════════════════════════════
+
+function initMultiCards() {
+  document.querySelectorAll('[data-multi]').forEach(grid => {
+    const field = grid.dataset.multi;
+    multiState[field] = new Set();
+    grid.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => {
+        const val = card.dataset.value;
+        if (multiState[field].has(val)) {
+          multiState[field].delete(val);
+          card.classList.remove('selected');
+        } else {
+          multiState[field].add(val);
+          card.classList.add('selected');
+        }
+      });
+    });
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Ranked cards (click-to-add with numbered badge)
+// ═════════════════════════════════════════════════════════════════════════════
+
+function initRankCards() {
+  document.querySelectorAll('[data-rank]').forEach(grid => {
+    const field = grid.dataset.rank;
+    const max = parseInt(grid.dataset.max) || 5;
+    rankState[field] = [];
+
+    grid.querySelectorAll('.card.rank-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const val = card.dataset.value;
+        const idx = rankState[field].indexOf(val);
+        if (idx >= 0) {
+          rankState[field].splice(idx, 1);
+        } else if (rankState[field].length < max) {
+          rankState[field].push(val);
+        }
+        updateRankDisplay(grid, field, max);
+        if (field === 'core_genres') updateExcludeGenreGrid();
+      });
+    });
+  });
+}
+
+function updateRankDisplay(grid, field, max) {
+  grid.querySelectorAll('.card.rank-card').forEach(card => {
+    const val = card.dataset.value;
+    const idx = rankState[field].indexOf(val);
+    const badge = card.querySelector('.rank-badge');
+    if (idx >= 0) {
+      card.classList.add('selected');
+      badge.textContent = idx + 1;
+    } else {
+      card.classList.remove('selected');
+      badge.textContent = '';
+      card.classList.toggle('disabled-pick', rankState[field].length >= max);
+    }
+  });
+  // Remove disabled from selected
+  grid.querySelectorAll('.card.rank-card.selected').forEach(c => c.classList.remove('disabled-pick'));
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Exclude genre grid
+// ═════════════════════════════════════════════════════════════════════════════
+
+function buildExcludeGenreGrid() {
+  const grid = document.getElementById('excludeGenreGrid');
+  grid.innerHTML = '';
+  grid.setAttribute('data-multi', 'avoided_genres_internal');
+  GENRES.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'card checkbox-card';
+    card.dataset.value = g;
+    card.innerHTML = `<div class="card-label">${GENRE_LABELS[g]}</div>`;
+    card.addEventListener('click', () => toggleExclude(g, card));
+    grid.appendChild(card);
+  });
+}
+
+function updateExcludeGenreGrid() {
+  const coreSet = new Set(rankState.core_genres || []);
+  const grid = document.getElementById('excludeGenreGrid');
+  grid.querySelectorAll('.card').forEach(card => {
+    const g = card.dataset.value;
+    const isCore = coreSet.has(g);
+    card.style.opacity = isCore ? '0.2' : '1';
+    card.style.pointerEvents = isCore ? 'none' : 'auto';
+    if (isCore && excludedGenres.has(g)) {
+      excludedGenres.delete(g);
+      delete exclusionStrictness[g];
+      card.classList.remove('selected');
+    }
+  });
+  updateExclusionStrictness();
+}
+
+function toggleExclude(genre, card) {
+  if (excludedGenres.has(genre)) {
+    excludedGenres.delete(genre);
+    delete exclusionStrictness[genre];
+    card.classList.remove('selected');
+  } else {
+    excludedGenres.add(genre);
+    exclusionStrictness[genre] = 'hard_block';
+    card.classList.add('selected');
+  }
+  updateExclusionStrictness();
+}
+
+function updateExclusionStrictness() {
+  const container = document.getElementById('exclusionStrictnessFields');
+  if (excludedGenres.size === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;margin-top:4px;">Set strictness for each excluded genre:</div>';
+  excludedGenres.forEach(g => {
+    const row = document.createElement('div');
+    row.className = 'dynamic-row';
+    row.innerHTML = `
+      <span class="dr-label">${GENRE_LABELS[g]}</span>
+      <select data-strictness="${g}">
+        <option value="hard_block" ${exclusionStrictness[g]==='hard_block'?'selected':''}>Never Play</option>
+        <option value="soft_suppress" ${exclusionStrictness[g]==='soft_suppress'?'selected':''}>Rarely Play</option>
+      </select>`;
+    row.querySelector('select').addEventListener('change', e => {
+      exclusionStrictness[g] = e.target.value;
+    });
+    container.appendChild(row);
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Daypart grid
+// ═════════════════════════════════════════════════════════════════════════════
+
+function buildDaypartGrid() {
+  const grid = document.getElementById('daypartGrid');
+  DAYPARTS.forEach(dp => {
+    const label = document.createElement('div');
+    label.className = 'dg-row-label';
+    label.textContent = DAYPART_LABELS[dp];
+    grid.appendChild(label);
+    DAYS.forEach(day => {
+      const cell = document.createElement('div');
+      cell.className = 'dg-cell';
+      cell.dataset.daypart = dp;
+      cell.dataset.day = day;
+      cell.addEventListener('click', () => toggleDaypart(dp, day, cell));
+      grid.appendChild(cell);
+    });
+  });
+}
+
+function toggleDaypart(dp, day, cell) {
+  const key = `${day}_${dp}`;
+  if (selectedDayparts.has(key)) {
+    selectedDayparts.delete(key);
+    cell.classList.remove('selected');
+  } else {
+    selectedDayparts.add(key);
+    cell.classList.add('selected');
+  }
+  updateDaypartEnergy();
+}
+
+function updateDaypartEnergy() {
+  const block = document.getElementById('daypartEnergyBlock');
+  const container = document.getElementById('daypartEnergyFields');
+  if (selectedDayparts.size === 0) {
+    block.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  block.style.display = '';
+  container.innerHTML = '';
+  const sorted = [...selectedDayparts].sort();
+  sorted.forEach(key => {
+    const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const current = daypartEnergy[key] || 'moderate';
+    const row = document.createElement('div');
+    row.className = 'dynamic-row';
+    row.innerHTML = `
+      <span class="dr-label">${label}</span>
+      <select data-daypart-energy="${key}">
+        <option value="very_low" ${current==='very_low'?'selected':''}>Very Low</option>
+        <option value="low" ${current==='low'?'selected':''}>Low</option>
+        <option value="moderate" ${current==='moderate'?'selected':''}>Moderate</option>
+        <option value="elevated" ${current==='elevated'?'selected':''}>Elevated</option>
+        <option value="high" ${current==='high'?'selected':''}>High</option>
+        <option value="very_high" ${current==='very_high'?'selected':''}>Very High</option>
+      </select>`;
+    row.querySelector('select').addEventListener('change', e => {
+      daypartEnergy[key] = e.target.value;
+    });
+    container.appendChild(row);
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Textareas (char counter)
+// ═════════════════════════════════════════════════════════════════════════════
+
+function initTextareas() {
+  document.querySelectorAll('.textarea-wrap textarea').forEach(ta => {
+    const wrap = ta.closest('.textarea-wrap');
+    const counter = wrap.querySelector('.char-count');
+    if (!counter) return;
+    const max = parseInt(ta.getAttribute('maxlength')) || 0;
+    const countEl = counter.querySelector('.cc-count');
+    ta.addEventListener('input', () => {
+      const len = ta.value.length;
+      countEl.textContent = len;
+      counter.classList.toggle('warn', max > 0 && len > max * 0.85);
+      counter.classList.toggle('over', max > 0 && len >= max);
+    });
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Collect data
+// ═════════════════════════════════════════════════════════════════════════════
+
+function collectFormData() {
+  const data = {};
+  // Text fields
+  document.querySelectorAll('[data-field]').forEach(el => {
+    data[el.dataset.field] = el.value.trim();
+  });
+  // Radio selects
+  Object.assign(data, radioState);
+  // Rank fields
+  data.core_genres = rankState.core_genres || [];
+  data.era_preferences = rankState.era_preferences || [];
+  // Exclude genres
+  data.avoided_genres = [...excludedGenres];
+  data.genre_exclusion_strictness = { ...exclusionStrictness };
+  // Multi-select
+  for (const [key, set] of Object.entries(multiState)) {
+    data[key] = [...set];
+  }
+  // Dayparts
+  data.operating_dayparts = [...selectedDayparts].sort();
+  data.daypart_energy_overrides = [...selectedDayparts].sort().map(dp => ({
+    daypart: dp,
+    energy_level: daypartEnergy[dp] || 'moderate',
+  }));
+  // Language preferences
+  if (langChoice === 'specific_languages') {
+    const langs = data.specific_languages_text || '';
+    data.language_preferences = langs ? langs.split(',').map(s => s.trim()).filter(Boolean) : ['english_only'];
+  } else {
+    data.language_preferences = [langChoice || 'english_only'];
+  }
+  // Blocklist: split by comma/newline
+  const blockNotes = data.blocklist_notes || '';
+  data.artist_blocklist = blockNotes ? blockNotes.split(/[,\n]/).map(s => s.trim()).filter(Boolean) : [];
+
+  // Clean up internal fields
+  delete data.specific_languages_text;
+  delete data.language_preference_choice;
+  delete data.avoided_genres_internal;
+
+  return data;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Review
+// ═════════════════════════════════════════════════════════════════════════════
+
+function buildReview() {
+  const data = collectFormData();
+  const container = document.getElementById('reviewContent');
+  container.innerHTML = '';
+
+  const sections = [
+    { tag: 'A', title: 'Client & Venue Info', idx: 0, rows: [
+      ['Venue Name', data.venue_name],
+      ['Venue Type', formatVal(data.venue_type)],
+      ['Address', data.venue_address],
+      ['Contact', data.contact_name],
+      ['Email', data.contact_email],
+    ]},
+    { tag: 'B', title: 'Brand & Atmosphere', idx: 1, rows: [
+      ['Brand Description', data.brand_description],
+      ['Target Audience', data.target_audience],
+      ['Primary Vibe', formatVal(data.primary_vibe)],
+      ['Music Role', formatVal(data.music_role)],
+    ]},
+    { tag: 'C', title: 'Genre Preferences', idx: 2, rows: [
+      ['Core Genres', (data.core_genres || []).map((g,i) => `${i+1}. ${GENRE_LABELS[g]||g}`).join(', ')],
+      ['Excluded Genres', (data.avoided_genres || []).map(g => {
+        const s = data.genre_exclusion_strictness[g];
+        return `${GENRE_LABELS[g]||g} (${s === 'soft_suppress' ? 'rarely' : 'never'})`;
+      }).join(', ')],
+      ['Sub-genre Notes', data.subgenre_notes],
+      ['Artist References', data.artist_song_references],
+    ]},
+    { tag: 'D', title: 'Era & Popularity', idx: 3, rows: [
+      ['Preferred Decades', (data.era_preferences || []).map((e,i) => `${i+1}. ${e}`).join(', ')],
+      ['Era Diversity', formatVal(data.era_diversity)],
+      ['Popularity', formatVal(data.popularity_preference)],
+    ]},
+    { tag: 'E', title: 'Energy & Mood', idx: 4, rows: [
+      ['Operating Dayparts', (data.operating_dayparts || []).map(d => d.replace(/_/g,' ')).join(', ')],
+      ['Mood', formatVal(data.mood_preference)],
+      ['Energy Flow', formatVal(data.energy_flow_style)],
+    ]},
+    { tag: 'F', title: 'Tempo & Sound', idx: 5, rows: [
+      ['Tempo', formatVal(data.tempo_preference)],
+      ['Acoustic/Electronic', formatVal(data.acoustic_electronic_balance)],
+      ['Vocal Preference', formatVal(data.vocal_preference)],
+    ]},
+    { tag: 'G', title: 'Content Restrictions', idx: 6, rows: [
+      ['Explicit Policy', formatVal(data.explicit_content_policy)],
+      ['Language', (data.language_preferences || []).join(', ')],
+      ['Content Restrictions', (data.content_restrictions || []).map(formatVal).join(', ')],
+      ['Blocklist', data.blocklist_notes],
+    ]},
+    { tag: 'H', title: 'Advanced', idx: 7, rows: [
+      ['Artist Repetition', formatVal(data.artist_repetition_tolerance)],
+      ['Discovery Level', formatVal(data.discovery_level)],
+      ['Special Notes', data.special_programming_notes],
+    ]},
+  ];
+
+  sections.forEach(sec => {
+    const block = document.createElement('div');
+    block.className = 'review-block';
+    block.addEventListener('click', () => goToSection(sec.idx));
+    let html = `<div class="review-block-header">
+      <div class="review-block-title"><span class="tag">Section ${sec.tag}</span> ${sec.title}</div>
+      <div class="edit-hint">Edit &rarr;</div>
+    </div>`;
+    sec.rows.forEach(([label, val]) => {
+      const display = val || '';
+      html += `<div class="review-row">
+        <span class="rr-label">${label}</span>
+        <span class="rr-value ${!display ? 'empty' : ''}">${display || 'Not set'}</span>
+      </div>`;
+    });
+    block.innerHTML = html;
+    container.appendChild(block);
+  });
+}
+
+function formatVal(v) {
+  if (!v) return '';
+  return v.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Submit — Supabase INSERT
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function submitProfile() {
+  const data = collectFormData();
+  const loading = document.getElementById('loadingOverlay');
+  const loadingText = document.getElementById('loadingText');
+
+  loading.classList.remove('hidden');
+  loadingText.textContent = 'Submitting profile...';
+
+  try {
+    if (!supabase) {
+      throw new Error('Supabase not configured. Please contact your VibeCheck representative.');
+    }
+
+    // Generate profile_id client-side (8-char UUID prefix, same as local service)
+    const profileId = crypto.randomUUID().substring(0, 8);
+
+    // Build the row matching the Supabase table schema
+    const row = {
+      profile_id: profileId,
+      venue_name: data.venue_name || '',
+      venue_type: data.venue_type || 'casual_dining',
+      venue_address: data.venue_address || '',
+      contact_name: data.contact_name || '',
+      contact_email: data.contact_email || '',
+      brand_description: data.brand_description || '',
+      target_audience: data.target_audience || '',
+      primary_vibe: data.primary_vibe || 'casual_upbeat',
+      music_role: data.music_role || 'ambiance',
+      core_genres: data.core_genres || [],
+      avoided_genres: data.avoided_genres || [],
+      genre_exclusion_strictness: data.genre_exclusion_strictness || {},
+      subgenre_notes: data.subgenre_notes || '',
+      artist_song_references: data.artist_song_references || '',
+      era_preferences: data.era_preferences || [],
+      era_diversity: data.era_diversity || 'balanced_mix',
+      popularity_preference: data.popularity_preference || 'balanced_mix',
+      operating_dayparts: data.operating_dayparts || [],
+      daypart_energy_overrides: data.daypart_energy_overrides || [],
+      mood_preference: data.mood_preference || 'warm_neutral',
+      energy_flow_style: data.energy_flow_style || 'standard_flow',
+      tempo_preference: data.tempo_preference || 'moderate',
+      acoustic_electronic_balance: data.acoustic_electronic_balance || 'balanced',
+      vocal_preference: data.vocal_preference || 'no_preference',
+      explicit_content_policy: data.explicit_content_policy || 'no_restrictions',
+      language_preferences: data.language_preferences || ['english_only'],
+      content_restrictions: data.content_restrictions || [],
+      artist_blocklist: data.artist_blocklist || [],
+      blocklist_notes: data.blocklist_notes || '',
+      artist_repetition_tolerance: data.artist_repetition_tolerance || 'standard',
+      discovery_level: data.discovery_level || 'balanced',
+      special_programming_notes: data.special_programming_notes || '',
+      status: 'submitted',
+      created_by: 'online_wizard',
+    };
+
+    const { error } = await supabase.from('client_profiles').insert(row);
+
+    if (error) throw new Error(error.message);
+
+    loading.classList.add('hidden');
+
+    // Show success
+    document.getElementById('successTitle').textContent = `${data.venue_name} — Profile Submitted!`;
+    document.getElementById('successSub').textContent =
+      'Thank you! Your music profile has been received. Our team will configure your VibeCheck music system based on your preferences and reach out when it\'s ready.';
+
+    goToSection(9);
+  } catch (err) {
+    loading.classList.add('hidden');
+    showToast(`Error: ${err.message}`);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Reset
+// ═════════════════════════════════════════════════════════════════════════════
+
+function resetWizard() {
+  // Clear all form state
+  document.querySelectorAll('[data-field]').forEach(el => el.value = '');
+  document.querySelectorAll('.card.selected').forEach(el => el.classList.remove('selected'));
+  Object.keys(radioState).forEach(k => delete radioState[k]);
+  Object.keys(multiState).forEach(k => multiState[k].clear());
+  Object.keys(rankState).forEach(k => rankState[k] = []);
+  selectedDayparts.clear();
+  daypartEnergy = {};
+  excludedGenres.clear();
+  exclusionStrictness = {};
+  langChoice = 'english_only';
+  document.getElementById('langSubInput').classList.remove('visible');
+  document.getElementById('daypartEnergyBlock').style.display = 'none';
+  document.getElementById('exclusionStrictnessFields').innerHTML = '';
+  document.getElementById('daypartEnergyFields').innerHTML = '';
+  updateExcludeGenreGrid();
+  goToSection(0);
+}
+</script>
+</body>
+</html>
