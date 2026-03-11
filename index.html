@@ -966,14 +966,14 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const ACCESS_CODE = 'vibecheck';
 
-let supabase = null;
+let supabaseClient = null;
 
 function initSupabase() {
   if (SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
     console.error('Supabase anon key not configured. Update SUPABASE_ANON_KEY in index.html.');
     return false;
   }
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   return true;
 }
 
@@ -1563,7 +1563,7 @@ async function submitProfile() {
   loadingText.textContent = 'Submitting profile...';
 
   try {
-    if (!supabase) {
+    if (!supabaseClient) {
       throw new Error('Supabase not configured. Please contact your VibeCheck representative.');
     }
 
@@ -1609,7 +1609,7 @@ async function submitProfile() {
       created_by: 'online_wizard',
     };
 
-    const { error } = await supabase.from('client_profiles').insert(row);
+    const { error } = await supabaseClient.from('client_profiles').insert(row);
 
     if (error) throw new Error(error.message);
 
